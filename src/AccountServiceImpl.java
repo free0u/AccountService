@@ -1,3 +1,4 @@
+import javax.xml.transform.Result;
 import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,7 +23,32 @@ public class AccountServiceImpl implements AccountService {
         inWrite = false;
 
         initDBConnection("accountservice", "free0u", "");
-        executeQuery("select version()");
+
+        recreateDatabaseScheme();
+    }
+
+    private void recreateDatabaseScheme() {
+        executeQuery("drop table if exists Store;");
+        executeQuery("drop table if exists Functions cascade;");
+        executeQuery("drop table if exists FunctionCalls;");
+
+        executeQuery("create table Functions(" +
+                "id integer primary key," +
+                "name varchar(30)" +
+                ");");
+        executeQuery("insert into functions values" +
+                "(1, 'getAmount')," +
+                "(2, 'setAmount');");
+
+        executeQuery("create table FunctionCalls (" +
+                "id integer primary key," +
+                "functionsId integer references Functions(id)," +
+                "ts timestamp" +
+                ");");
+
+        executeQuery("create table Store(" +
+                "id integer primary key," +
+                "value bigint);");
     }
 
     private void initDBConnection(String dbName, String userName, String userPass) {
@@ -35,16 +61,17 @@ public class AccountServiceImpl implements AccountService {
         }
     }
 
-    private void executeQuery(String query) {
+    private ResultSet executeQuery(String query) {
         try (Statement stmt = con.createStatement()) {
 
-            ResultSet rs = stmt.executeQuery(query);
-            while (rs.next()) {
-                System.out.println(rs);
+            boolean status = stmt.execute(query);
+            if (status) {
+                return stmt.getResultSet();
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        return null;
     }
 
     @Override

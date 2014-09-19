@@ -1,8 +1,6 @@
-import javax.xml.transform.Result;
 import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -55,14 +53,15 @@ public class AccountServiceImpl implements AccountService {
         String url = String.format("jdbc:postgresql://127.0.0.1/%s", dbName);
 
         try {
-            con = DriverManager.getConnection(url,userName,userPass);
+            con = DriverManager.getConnection(url, userName, userPass);
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
     private ResultSet executeQuery(String query) {
-        try (Statement stmt = con.createStatement()) {
+        try {
+            Statement stmt = con.createStatement();
 
             boolean status = stmt.execute(query);
             if (status) {
@@ -74,36 +73,66 @@ public class AccountServiceImpl implements AccountService {
         return null;
     }
 
+    private Long getValueById(int id) {
+        try (
+            Statement stmt = con.createStatement();
+            ResultSet rs = executeQuery("select * from store where id = " + id);
+        ) {
+            if (rs.next()) {
+                return rs.getLong("value");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private void insertValue(int id, Long value) {
+        String query = String.format("insert into store values (%d, %d)", id, 0L);
+        try (
+                Statement stmt = con.createStatement();
+        ) {
+            boolean status = stmt.execute(query); // TODO change execute to another function
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void updateValue(int id, Long value) {
+        String query = String.format("update store set value = %d where id = %d", value, id);
+        try (
+                Statement stmt = con.createStatement();
+        ) {
+            boolean status = stmt.execute(query); // TODO change execute to another function
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    
+    /*
+    * invariant:
+    * if id in a cache then
+    *    cache[id] is the same with store[id]
+    */
+
+
     @Override
     public Long getAmount(Integer id) {
         r.lock();
         try {
-            if (inRead) {
-                System.out.println("it's not first read");
-            }
-            inRead = true;
-            try {
-                Random r = new Random();
-                Thread.sleep(r.nextInt(1000));
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            System.out.println("read begin");
-
-            if (inWrite) {
-                try {
-                    throw new Exception("already writing");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-
-            long retValue = 0L;
             if (cache.containsKey(id)) {
-                retValue = cache.get(id);
+                return cache.get(id);
             }
-            System.out.println("read end");
-            inRead = false;
+
+            Long retValue = getValueById(id);
+            if (retValue != null) {
+                cache.put(id, retValue);
+            } else {
+                retValue = 0L;
+            }
+
             return retValue;
         } finally {
             r.unlock();
@@ -114,34 +143,19 @@ public class AccountServiceImpl implements AccountService {
     public void addAmount(Integer id, Long value) {
         w.lock();
         try {
-            if (inWrite) {
-                System.out.println("it's not first write");
+            Long newValue = getValueById(id);
+            if (newValue == null) {
+                newValue = 0L;
+                insertValue(id, 0L);
             }
-            inWrite = true;
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            if (inRead) {
-                try {
-                    throw new Exception("already reading");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
+            newValue += value;
 
-            System.out.println("write begin");
-            cache.put(id, value);
-            System.out.println("write end");
-            inWrite = false;
+            updateValue(id, newValue);
+            cache.put(id, newValue);
+
         } finally {
             w.unlock();
         }
-    }
-
-    public void foo() {
-
     }
 
     public String toString() {

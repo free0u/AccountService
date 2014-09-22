@@ -1,5 +1,6 @@
 import java.sql.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -8,13 +9,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Created by free0u on 9/11/14.
  */
 public class AccountServiceImpl implements AccountService {
-    Map<Integer, Long> cache = new HashMap<Integer, Long>();
-    private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
-    private final Lock r = rwl.readLock();
-    private final Lock w = rwl.writeLock();
-    boolean inRead, inWrite;
+    private Map<Integer, Long> cache = new HashMap<>();
+    private Map<Integer, ReentrantReadWriteLock> locks = new HashMap<>();
+    private boolean inRead, inWrite;
 
-    Connection con = null;
+    private Connection con = null;
 
     public AccountServiceImpl() {
         inRead = false;
@@ -120,7 +119,11 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public Long getAmount(Integer id) {
-        r.lock();
+        if (!locks.containsKey(id)) {
+            locks.put(id, new ReentrantReadWriteLock());
+        }
+        locks.get(id).readLock().lock();
+
         try {
             if (cache.containsKey(id)) {
                 return cache.get(id);
@@ -135,13 +138,17 @@ public class AccountServiceImpl implements AccountService {
 
             return retValue;
         } finally {
-            r.unlock();
+            locks.get(id).readLock().lock();
         }
     }
 
     @Override
     public void addAmount(Integer id, Long value) {
-        w.lock();
+        if (!locks.containsKey(id)) {
+            locks.put(id, new ReentrantReadWriteLock());
+        }
+        locks.get(id).writeLock().lock();
+        
         try {
             Long newValue = getValueById(id);
             if (newValue == null) {
@@ -154,7 +161,7 @@ public class AccountServiceImpl implements AccountService {
             cache.put(id, newValue);
 
         } finally {
-            w.unlock();
+            locks.get(id).writeLock().lock();
         }
     }
 

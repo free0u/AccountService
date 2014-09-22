@@ -32,8 +32,12 @@ public class Tester implements Runnable {
 
     public static void main(String[] args) {
         AccountService serv = new AccountServiceImpl();
+        System.out.println(serv.getAmount(10));
+        serv.addAmount(10, 11L);
+        System.out.println(serv.getAmount(10));
+
         for (int i = 0; i < 10; i++) {
-            Tester tester = new Tester(i, serv, 1);
+            Tester tester = new Tester(i, serv, i % 2);
             Thread thread = new Thread(tester);
             thread.start();
         }

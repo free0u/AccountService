@@ -38,7 +38,7 @@ public class AccountServiceImpl implements AccountService {
                 "(2, 'setAmount');");
 
         executeQuery("create table FunctionCalls (" +
-                "id integer primary key," +
+                "id serial primary key," +
                 "functionsId integer references Functions(id)," +
                 "ts timestamp" +
                 ");");
@@ -109,6 +109,19 @@ public class AccountServiceImpl implements AccountService {
     }
 
 
+    private void insertTimestamp(int id) {
+        int unixTime = (int) (System.currentTimeMillis() / 1000L);
+        String query = String.format("insert into functionCalls(functionsId, ts) values (%d, '%s')", id,
+                new Timestamp(new java.util.Date().getTime()));
+        try (
+                Statement stmt = con.createStatement();
+        ) {
+            boolean status = stmt.execute(query); // TODO change execute to another function
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     
     /*
     * invariant:
@@ -119,6 +132,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public Long getAmount(Integer id) {
+        insertTimestamp(1);
         if (!locks.containsKey(id)) {
             locks.put(id, new ReentrantReadWriteLock());
         }
@@ -138,17 +152,18 @@ public class AccountServiceImpl implements AccountService {
 
             return retValue;
         } finally {
-            locks.get(id).readLock().lock();
+            locks.get(id).readLock().unlock();
         }
     }
 
     @Override
     public void addAmount(Integer id, Long value) {
+        insertTimestamp(2);
         if (!locks.containsKey(id)) {
             locks.put(id, new ReentrantReadWriteLock());
         }
         locks.get(id).writeLock().lock();
-        
+
         try {
             Long newValue = getValueById(id);
             if (newValue == null) {
@@ -161,7 +176,7 @@ public class AccountServiceImpl implements AccountService {
             cache.put(id, newValue);
 
         } finally {
-            locks.get(id).writeLock().lock();
+            locks.get(id).writeLock().unlock();
         }
     }
 

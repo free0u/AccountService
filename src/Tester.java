@@ -31,7 +31,7 @@ public class Tester implements Runnable {
     }
 
     public static void main(String[] args) {
-        AccountService serv = new AccountServiceImpl();
+        AccountServiceImpl serv = new AccountServiceImpl();
         System.out.println(serv.getAmount(10));
         serv.addAmount(10, 11L);
         System.out.println(serv.getAmount(10));
@@ -41,5 +41,8 @@ public class Tester implements Runnable {
             Thread thread = new Thread(tester);
             thread.start();
         }
+
+        System.out.println(serv.getCountRequestsAll(1));
+        System.out.println(serv.getCountRequestsAll(2));
     }
 }

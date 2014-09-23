@@ -122,6 +122,20 @@ public class AccountServiceImpl implements AccountService {
         }
     }
 
+    public Integer getCountRequestsAll(int id) {
+        try (
+            Statement stmt = con.createStatement();
+            ResultSet rs = executeQuery("select count(*) from FunctionCalls where functionsId = " + id);
+        ) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     
     /*
     * invariant:

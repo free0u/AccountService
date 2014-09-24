@@ -72,109 +72,92 @@ public class AccountServiceImpl implements AccountService {
         return null;
     }
 
-    private Long getValueById(int id) {
+    private Long getValueById(int id) throws SQLException {
         try (
-            Statement stmt = con.createStatement();
             ResultSet rs = executeQuery("select * from store where id = " + id);
         ) {
             if (rs.next()) {
                 return rs.getLong("value");
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
         return null;
     }
 
-    private void insertValue(int id, Long value) {
+    private void insertValue(int id, Long value) throws SQLException {
         String query = String.format("insert into store values (%d, %d)", id, 0L);
         try (
                 Statement stmt = con.createStatement();
         ) {
-            boolean status = stmt.execute(query); // TODO change execute to another function
-        } catch (SQLException e) {
-            e.printStackTrace();
+            int status = stmt.executeUpdate(query);
         }
     }
 
-    private void updateValue(int id, Long value) {
+    private void updateValue(int id, Long value) throws SQLException {
         String query = String.format("update store set value = %d where id = %d", value, id);
         try (
                 Statement stmt = con.createStatement();
         ) {
-            boolean status = stmt.execute(query); // TODO change execute to another function
-        } catch (SQLException e) {
-            e.printStackTrace();
+            int status = stmt.executeUpdate(query);
         }
     }
 
 
-    private void insertTimestamp(int id) {
-        int unixTime = (int) (System.currentTimeMillis() / 1000L);
-        String query = String.format("insert into functionCalls(functionsId, ts) values (%d, '%s')", id,
+    private void insertTimestamp(int id) throws SQLException {
+        String query = String.format("insert into functionCalls(functionsId, ts) values (%d, '%s')",
+                id,
                 new Timestamp(new java.util.Date().getTime()));
         try (
                 Statement stmt = con.createStatement();
         ) {
-            boolean status = stmt.execute(query); // TODO change execute to another function
-        } catch (SQLException e) {
-            e.printStackTrace();
+            int status = stmt.executeUpdate(query);
         }
     }
 
-    public Integer getCountRequestsAll(int id) {
+    public Integer getCountRequestsAll(int id) throws SQLException {
         try (
-                Statement stmt = con.createStatement();
                 ResultSet rs = executeQuery("select count(*) from FunctionCalls where functionsId = " + id);
         ) {
             if (rs.next()) {
                 return rs.getInt(1);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
         return null;
     }
 
-    public Integer getCountRequestsPerInterval(int id, int sec) {
+    public Integer getCountRequestsPerInterval(int id, int sec) throws SQLException {
         Timestamp ts = new Timestamp(new java.util.Date().getTime() - sec * 1000L);
         String query = String.format("select count(*) from FunctionCalls where functionsId = %d and ts >= '%s'", id, ts);
         try (
 
-                Statement stmt = con.createStatement();
                 ResultSet rs = executeQuery(query);
         ) {
             if (rs.next()) {
                 return rs.getInt(1);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
         return null;
     }
 
 
-    public void clearLogs() {
+    public void clearLogs() throws SQLException {
         String query = "delete from functionCalls";
         try (
                 Statement stmt = con.createStatement();
         ) {
-            boolean status = stmt.execute(query); // TODO change execute to another function
-        } catch (SQLException e) {
-            e.printStackTrace();
+            int status = stmt.executeUpdate(query);
         }
     }
 
     
     /*
-    * invariant:
+    * invariant for getAmount and addAmount:
     * if id in a cache then
     *    cache[id] is the same with store[id]
     */
 
 
     @Override
-    public Long getAmount(Integer id) {
+    public Long getAmount(Integer id) throws SQLException {
         insertTimestamp(1);
         if (!locks.containsKey(id)) {
             locks.put(id, new ReentrantReadWriteLock());
@@ -200,7 +183,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public void addAmount(Integer id, Long value) {
+    public void addAmount(Integer id, Long value) throws SQLException {
         insertTimestamp(2);
         if (!locks.containsKey(id)) {
             locks.put(id, new ReentrantReadWriteLock());

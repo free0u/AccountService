@@ -154,6 +154,17 @@ public class AccountServiceImpl implements AccountService {
     }
 
 
+    public void clearLogs() {
+        String query = "delete from functionCalls";
+        try (
+                Statement stmt = con.createStatement();
+        ) {
+            boolean status = stmt.execute(query); // TODO change execute to another function
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     
     /*
     * invariant:

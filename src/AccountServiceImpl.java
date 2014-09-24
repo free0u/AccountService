@@ -124,8 +124,8 @@ public class AccountServiceImpl implements AccountService {
 
     public Integer getCountRequestsAll(int id) {
         try (
-            Statement stmt = con.createStatement();
-            ResultSet rs = executeQuery("select count(*) from FunctionCalls where functionsId = " + id);
+                Statement stmt = con.createStatement();
+                ResultSet rs = executeQuery("select count(*) from FunctionCalls where functionsId = " + id);
         ) {
             if (rs.next()) {
                 return rs.getInt(1);
@@ -135,6 +135,24 @@ public class AccountServiceImpl implements AccountService {
         }
         return null;
     }
+
+    public Integer getCountRequestsPerInterval(int id, int sec) {
+        Timestamp ts = new Timestamp(new java.util.Date().getTime() - sec * 1000L);
+        String query = String.format("select count(*) from FunctionCalls where functionsId = %d and ts >= '%s'", id, ts);
+        try (
+
+                Statement stmt = con.createStatement();
+                ResultSet rs = executeQuery(query);
+        ) {
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 
     
     /*

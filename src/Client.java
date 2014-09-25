@@ -102,6 +102,9 @@ public class Client implements Runnable {
                 }
             }
 
+            int cntGetAmountTotal = serv.getCountRequestsAll(1);
+            int cntAddAmountTotal = serv.getCountRequestsAll(2);
+            System.out.println(String.format("Stat (total): getAmount calls=%d; addAmount calls=%d", cntGetAmountTotal, cntAddAmountTotal));
         } catch (Exception e) {
             System.err.println("Client exception: " + e.toString());
             e.printStackTrace();

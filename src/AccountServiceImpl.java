@@ -7,9 +7,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-/**
- * Created by free0u on 9/11/14.
- */
 public class AccountServiceImpl implements AccountService {
     private Map<Integer, Long> cache = new HashMap<>();
     private Map<Integer, ReentrantReadWriteLock> locks = new HashMap<>();

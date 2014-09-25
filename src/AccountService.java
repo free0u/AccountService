@@ -2,9 +2,6 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
 
-/**
- * Created by free0u on 9/11/14.
- */
 public interface AccountService extends Remote {
     /**
      * Retrieves current balance or zero if addAmount() method was not called before for specified id
